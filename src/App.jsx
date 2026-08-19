@@ -80,13 +80,17 @@ function App() {
     } catch (err) { console.error(err); }
   };
 
+  // --- CORRECTION : Initialisation avec les vraies données des captures d'écran ---
   const handleInitializeXtb = async () => {
-    if(window.confirm("Cela va synchroniser le portefeuille avec les valeurs de la capture. Confirmer ?")) {
+    if(window.confirm("Synchroniser le portefeuille avec l'historique exact de tes ordres XTB ?")) {
       try {
         await axios.post(`${API_URL}/portfolio/invest`, {
           reset: true,
-          allocations: { 'QQQ': 16.75, 'URTH': 16.46, 'VOO': 16.51 },
-          initialInvested: { 'QQQ': 15.06, 'URTH': 15.08, 'VOO': 15.08 }
+          customPortfolio: [
+            { ticker: 'QQQ', shares: 0.0103, investedAmount: 15.63 },
+            { ticker: 'URTH', shares: 0.116, investedAmount: 15.65 },
+            { ticker: 'VOO', shares: 0.0207, investedAmount: 15.65 }
+          ]
         });
         fetchData();
       } catch (err) { console.error(err); }

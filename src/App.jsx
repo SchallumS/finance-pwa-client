@@ -181,7 +181,7 @@ function App() {
     .reduce((acc, curr) => acc + convertAmount(curr.amount, curr.currency || 'XOF'), 0);
 
   return (
-    <div className="min-h-screen bg-black text-white p-3 md:p-8 font-sans pb-24">
+    <div className="min-h-screen bg-black text-white p-3 md:p-8 font-sans pb-32 md:pb-40">
       <div className="max-w-7xl mx-auto">
         
         {/* HEADER */}

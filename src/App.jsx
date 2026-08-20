@@ -133,13 +133,12 @@ function App() {
   const boaSavings = transactions.filter(t => t.type === 'SAVINGS_BOA').reduce((acc, curr) => acc + convertAmount(curr.amount, curr.currency || 'XOF'), 0);
   const debts = transactions.filter(t => t.type === 'DEBT').reduce((acc, curr) => acc + convertAmount(curr.amount, curr.currency || 'XOF'), 0);
 
-  // Calcul dynamique du Solde Disponible
   const currentBalance = transactions.reduce((acc, curr) => {
     const convertedAmount = convertAmount(curr.amount, curr.currency || 'XOF');
     if (curr.type === 'INCOME') return acc + convertedAmount;
     if (curr.type === 'EXPENSE') return acc - convertedAmount;
     if (curr.type === 'SAVINGS_BOA') return acc - convertedAmount;
-    if (curr.type === 'DEBT') return acc + convertedAmount;
+    // Les dettes ne touchent pas le solde courant (elles sont suivies dans leur propre carte)
     return acc;
   }, 0);
 

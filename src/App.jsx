@@ -133,6 +133,16 @@ function App() {
   const boaSavings = transactions.filter(t => t.type === 'SAVINGS_BOA').reduce((acc, curr) => acc + convertAmount(curr.amount, curr.currency || 'XOF'), 0);
   const debts = transactions.filter(t => t.type === 'DEBT').reduce((acc, curr) => acc + convertAmount(curr.amount, curr.currency || 'XOF'), 0);
 
+  // Calcul dynamique du Solde Disponible
+  const currentBalance = transactions.reduce((acc, curr) => {
+    const convertedAmount = convertAmount(curr.amount, curr.currency || 'XOF');
+    if (curr.type === 'INCOME') return acc + convertedAmount;
+    if (curr.type === 'EXPENSE') return acc - convertedAmount;
+    if (curr.type === 'SAVINGS_BOA') return acc - convertedAmount;
+    if (curr.type === 'DEBT') return acc + convertedAmount;
+    return acc;
+  }, 0);
+
   // Moteur Intelligent de Budgets
   const calculateBudgetProgress = (budget) => {
     const startDate = new Date(budget.createdAt);
@@ -204,8 +214,17 @@ function App() {
         {/* --- ONGLET 1 : TABLEAU DE BORD --- */}
         {activeTab === 'dashboard' && (
           <div className="animate-fadeIn">
-            {/* Cartes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            {/* Cartes (4 colonnes avec le Solde Disponible en premier) */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+              
+              <div className="bg-[#111] p-4 md:p-6 rounded-xl border border-neutral-800">
+                <h2 className="text-xs md:text-sm text-neutral-400 mb-1">Solde Disponible</h2>
+                <p className={`text-2xl md:text-3xl font-bold ${currentBalance >= 0 ? 'text-white' : 'text-red-500'}`}>
+                  {formatCurrency(currentBalance)}
+                </p>
+                <p className="text-[10px] text-neutral-500 mt-1">Liquidités courantes</p>
+              </div>
+
               <div className="bg-[#111] p-4 md:p-6 rounded-xl border border-neutral-800 flex flex-col justify-between">
                 <div>
                   <h2 className="text-xs md:text-sm text-neutral-400 mb-1">Portefeuille XTB</h2>
@@ -220,10 +239,12 @@ function App() {
                   <span>Investi: <span className="text-white font-medium">{formatCurrency(displayPortfolioInvested)}</span></span>
                 </div>
               </div>
+
               <div className="bg-[#111] p-4 md:p-6 rounded-xl border border-neutral-800">
                 <h2 className="text-xs md:text-sm text-neutral-400 mb-1">Épargne BOA</h2>
                 <p className="text-2xl md:text-3xl font-bold text-blue-500">{formatCurrency(boaSavings)}</p>
               </div>
+
               <div className="bg-[#111] p-4 md:p-6 rounded-xl border border-neutral-800">
                 <h2 className="text-xs md:text-sm text-neutral-400 mb-1">Dettes</h2>
                 <p className="text-2xl md:text-3xl font-bold text-red-500">{formatCurrency(debts)}</p>

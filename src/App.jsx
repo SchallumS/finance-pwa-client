@@ -43,9 +43,14 @@ function App() {
   // --- ACTIONS ---
   const handleTransactionSubmit = async (e) => {
     e.preventDefault();
-    const tagsArray = tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
     try {
-      await axios.post(`${API_URL}/transactions`, { title, amount: Number(amount), type, tags: tagsArray, currency: 'XOF' });
+      await axios.post(`${API_URL}/transactions`, { 
+        title, 
+        amount: Number(amount), 
+        type, 
+        tags: tagsInput ? [tagsInput] : [], 
+        currency: 'XOF' 
+      });
       setTitle(''); setAmount(''); setTagsInput(''); fetchData();
     } catch (err) { console.error(err); }
   };
@@ -80,7 +85,7 @@ function App() {
     } catch (err) { console.error(err); }
   };
 
-  // --- CORRECTION : Initialisation avec les vraies données des captures d'écran ---
+  // --- Initialisation avec les vraies données des ETF UCITS ---
   const handleInitializeXtb = async () => {
     if(window.confirm("Synchroniser avec l'historique exact de tes ETF UCITS ?")) {
       try {
@@ -138,21 +143,20 @@ function App() {
     if (curr.type === 'INCOME') return acc + convertedAmount;
     if (curr.type === 'EXPENSE') return acc - convertedAmount;
     if (curr.type === 'SAVINGS_BOA') return acc - convertedAmount;
-    // Les dettes ne touchent pas le solde courant (elles sont suivies dans leur propre carte)
     return acc;
   }, 0);
 
-  // Moteur Intelligent de Budgets
+  // Moteur Intelligent de Budgets avec prix entiers
   const calculateBudgetProgress = (budget) => {
     const startDate = new Date(budget.createdAt);
     const now = new Date();
     let monthsActive = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth()) + 1;
     if (monthsActive < 1) monthsActive = 1;
 
-    const totalAllowed = budget.monthlyLimit * monthsActive; 
-    const totalSpent = transactions
+    const totalAllowed = Math.round(budget.monthlyLimit * monthsActive); 
+    const totalSpent = Math.round(transactions
       .filter(t => t.type === 'EXPENSE' && t.tags.includes(budget.tag))
-      .reduce((acc, curr) => acc + curr.amount, 0);
+      .reduce((acc, curr) => acc + curr.amount, 0));
 
     const remaining = totalAllowed - totalSpent;
     const percentUsed = Math.min((totalSpent / totalAllowed) * 100, 100);
@@ -213,9 +217,8 @@ function App() {
         {/* --- ONGLET 1 : TABLEAU DE BORD --- */}
         {activeTab === 'dashboard' && (
           <div className="animate-fadeIn">
-            {/* Cartes (4 colonnes avec le Solde Disponible en premier) */}
+            {/* Cartes */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-              
               <div className="bg-[#111] p-4 md:p-6 rounded-xl border border-neutral-800">
                 <h2 className="text-xs md:text-sm text-neutral-400 mb-1">Solde Disponible</h2>
                 <p className={`text-2xl md:text-3xl font-bold ${currentBalance >= 0 ? 'text-white' : 'text-red-500'}`}>
@@ -250,7 +253,7 @@ function App() {
               </div>
             </div>
 
-            {/* Formulaires d'ajout */}
+            {/* Formulaires d'ajout avec sélecteur de budget dynamique */}
             <div className="bg-[#111] p-4 md:p-6 rounded-xl border border-neutral-800 mb-6">
               <h3 className="text-base font-semibold mb-4 text-white">Ajouter (en XOF)</h3>
               <form onSubmit={handleTransactionSubmit} className="grid grid-cols-2 md:grid-cols-12 gap-3 items-end mb-6">
@@ -269,7 +272,12 @@ function App() {
                   </select>
                 </div>
                 <div className="col-span-2 md:col-span-3">
-                  <input type="text" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="Tags : Optionnel, Loyer..." className="w-full bg-black border border-neutral-700 rounded-lg p-2.5 text-sm text-white outline-none" />
+                  <select value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} className="w-full bg-black border border-neutral-700 rounded-lg p-2.5 text-sm text-white outline-none">
+                    <option value="">-- Tag (Budget) --</option>
+                    {budgets.map(b => (
+                      <option key={b._id} value={b.tag}>{b.tag}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="col-span-2 md:col-span-2 mt-1">
                   <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded-lg text-sm">Ajouter</button>
@@ -348,7 +356,7 @@ function App() {
                       <h3 className="font-semibold text-white">{budget.tag}</h3>
                       <p className={`text-sm font-bold ${isOver ? 'text-red-500' : 'text-green-400'}`}>
                         {isOver ? 'Dépassé de ' : 'Reste '}
-                        {Math.abs(remaining).toLocaleString()} XOF
+                        {Math.round(Math.abs(remaining)).toLocaleString('fr-FR')} XOF
                       </p>
                     </div>
                     <div className="w-full bg-black rounded-full h-2.5">
@@ -400,7 +408,7 @@ function App() {
                         t.type === 'INCOME' ? 'text-green-500' :
                         t.type === 'DEBT' ? 'text-red-500' : 'text-blue-500'
                       }`}>
-                        {t.type === 'EXPENSE' ? '-' : '+'}{t.amount.toLocaleString()} {t.currency}
+                        {t.type === 'EXPENSE' ? '-' : '+'}{Math.round(t.amount).toLocaleString('fr-FR')} {t.currency}
                       </p>
                       <button onClick={() => handleDeleteTransaction(t._id)} className="text-neutral-500 hover:text-red-500 text-xl">🗑</button>
                     </div>
